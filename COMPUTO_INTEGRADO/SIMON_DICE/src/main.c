@@ -19,7 +19,7 @@ typedef struct Data_t
     {                                      \
         13, 12, 14, 27, 26, 25, 33, 32, 23 \
     }
-// DEFINICION PINES ENTRADA
+/*// DEFINICION PINES ENTRADA
 const uint8_t countRows = 4;
 const uint8_t countColumns = 4;
 const uint8_t rowsPins[countRows] = { 35, 34, 15, 2 };
@@ -29,7 +29,7 @@ char keys[countRows][countColumns] = {
   { '4','5','6', 'B' },
   { '7','8','9', 'C' },
   { '#','0','*', 'D' }
-};
+};*/
 #define LED_INPUT_PINES                 \
     {                                   \
         35, 34, 15, 2, 4, 16, 17, 5, 18 \
@@ -70,6 +70,18 @@ void app_main(void)
     {
         xTaskCreate(rebote_boton, "Task_Rebote_" + i, 4096, (void *)&leds[i], 1, &HandlersReboteBtn[i]);
     }
+    /*while (1)
+    {
+        for (int i = 0; i < sizeof(pinesEntradasLed) / sizeof(int); i++)
+        {
+            gpio_set_level(pinesSalidasLed[i], true);
+            vTaskDelay(200 / portTICK_PERIOD_MS);
+            printf("hola %i\n", pinesSalidasLed[i]);
+            gpio_set_level(pinesSalidasLed[i], false);
+            vTaskDelay(200 / portTICK_PERIOD_MS);
+            printf("adios %i\n", pinesSalidasLed[i]);
+        }
+    }*/
 }
 
 void app_main_setup()
@@ -90,7 +102,7 @@ void app_main_setup()
         gpio_set_direction(pinesSalidasLed[i], GPIO_MODE_OUTPUT);
 
         // (INICIALIZAR EL ESTADO EN TRUE PARA QUE AL INICIAR EL PROGRAMA ESTE CAMBIE A FALSE)
-        structLed data = {pinesSalidasLed[i], i, true};
+        structLed data = {pinesSalidasLed[i], i, false};
         leds[i] = data;
     }
 
@@ -106,7 +118,7 @@ void app_main_setup()
         gpio_set_intr_type(pinesEntradasLed[i], GPIO_INTR_POSEDGE);
 
         // SE AGREGA EL HANDLER PARA EL ISR
-        gpio_isr_handler_add(pinesEntradasLed[i], isr_handler_boton, &pinesEntradasLed[i]);
+        gpio_isr_handler_add(pinesEntradasLed[i], isr_handler_boton, (int *)&pinesEntradasLed[i]);
 
         // SE CONFIGURA EL HANDLER PARA LA TAREA
         TaskHandle_t data = NULL;
@@ -118,7 +130,7 @@ void app_main_setup()
     // SE CEDE EL USO DEL HANDLER DE TIPO SEMAFORO
     xSemaphoreGive(HandlerSemaphoreBtn);
 }
-
+/*
 bool readKeypad()
 {
   bool rst = false;
@@ -128,16 +140,16 @@ bool readKeypad()
     // Poner columna a LOW
     pinMode(columnsPins[c],OUTPUT);
     digitalWrite(columnsPins[c], LOW);
-    
+
     // Barrer todas las filas comprobando pulsaciones
     for (byte r = 0; r < countRows; r++)
     {
-      if (digitalRead(columnsPins[r]) == LOW)   
+      if (digitalRead(columnsPins[r]) == LOW)
       {
         // Pulsacion detectada, guardar fila y columna
         iRow = r;
         iCol = c;
-        rst = true; 
+        rst = true;
       }
     }
     // Devolver la columna a alta impedancia
@@ -146,7 +158,7 @@ bool readKeypad()
   }
   return rst;
 }
-
+*/
 void IRAM_ATTR isr_handler_boton(void *arg)
 {
     TaskHandle_t *data = (TaskHandle_t *)arg;
@@ -168,9 +180,9 @@ void rebote_boton(void *arg)
         // UN DELAY PEQUEÑO PARA EVITAR CUALQUIER ERROR
         vTaskDelay(INTERRUPT_DELAY / portTICK_PERIOD_MS);
         // CAMBIA EL ESTADO DEL LED
-        // data->pinEstado = !data->pinEstado;
+        data->pinEstado = !data->pinEstado;
         // SE ACTUALIZA EL ESTADO DEL LED
-        // gpio_set_level(data->pinSalida, data->pinEstado);
+        gpio_set_level(data->pinSalida, data->pinEstado);
         printf("Button %i pressed!\n", data->pinPosicionEnArreglo);
 
         // SE CEDE EL USO DEL HANDLER DE TIPO SEMAFORO
