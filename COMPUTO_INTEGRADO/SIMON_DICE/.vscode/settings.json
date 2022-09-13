@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "*.ipp": "c"
-    }
+        "*.ipp": "c",
+        "cstddef": "c"
+    },
+    "cmake.configureOnOpen": false
 }
