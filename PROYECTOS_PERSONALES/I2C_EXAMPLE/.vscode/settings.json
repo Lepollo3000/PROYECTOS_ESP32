@@ -1,0 +1,7 @@
+{
+    "cmake.configureOnOpen": false,
+    "files.associations": {
+        "esp_lcd_panel_interface.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
+}
