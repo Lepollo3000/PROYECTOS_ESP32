@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
@@ -42,24 +44,23 @@ typedef struct
 
 // DELAY PARA INTERRUPCION DE REBOTE
 #define INTERRUPT_DELAY 250
+#define DELAY_GAME_INIT 80
 
 // ------------------ DECLARACION VARIABLES GLOBALES ------------------
 
-uint8_t Skull[8] =
-    {0b00000,
-     0b01110,
-     0b10101,
-     0b11011,
-     0b01110,
-     0b01110,
-     0b00000,
-     0b00000};
+uint8_t Skull[8] = {0b00000, 0b01110, 0b10101, 0b11011, 0b01110, 0b01110, 0b00000, 0b00000};
 
 // ARREGLO DE ENTEROS QUE REPRESENTA LOS PINES DE ENTRADA PARA LOS LEDS
 const gpio_num_t pinesEntradaLED[] = LED_INPUT_PINES;
 
 // ARREGLO DE ENTEROS QUE REPRESENTA LOS PINES DE SALIDA PARA LOS LEDS
 const gpio_num_t pinesSalidaLED[] = LED_OUTPUT_PINES;
+
+// NIVEL DE DIFICULTAD
+uint8_t nivelDificultad;
+
+// SABER SI SE ESTÁ JUGANDO ACTUALMENTE
+bool juegoActivo;
 
 // SE DECLARA UN ARREGLO DE LEDS DEL TAMAÑO DE CANTIDAD DE PINES
 structLed arrLEDs[sizeof(pinesSalidaLED) / sizeof(gpio_num_t)];
@@ -78,8 +79,12 @@ extern "C"
 #endif
     void app_main(void);
     void app_main_setup();
-    void rebote_boton(void *arg);
+
     void IRAM_ATTR isr_handler_boton(void *arg);
+    void boton_presionado(void *arg);
+
+    void empezar_juego();
+    void revisar_patron(structLed led);
     void LCD_DemoTask(void *param);
 #ifdef __cplusplus
 }
@@ -90,12 +95,12 @@ void app_main(void)
     // CONFIGURACION GENERAL DE PINES Y SERVICIOS
     app_main_setup();
 
-    xTaskCreate(&LCD_DemoTask, "Task_Rebote_", 4056, NULL, 5, NULL);
+    // xTaskCreate(&LCD_DemoTask, "Task_Rebote_", 4056, NULL, 5, NULL);
 
     // SE CREAN LAS TAREAS PARA REBOTE DE BOTON
     for (int i = 0; i < sizeof(pinesEntradaLED) / sizeof(gpio_num_t); i++)
     {
-        xTaskCreate(rebote_boton, "Task_Rebote_" + i, 4056, (void *)&arrLEDs[i], 1, (void *)&arrHandlersReboteBtn[i]);
+        xTaskCreate(boton_presionado, "Task_Rebote_" + i, 4056, (void *)&arrLEDs[i], 1, (TaskHandle_t *)&arrHandlersReboteBtn[i]);
     }
 }
 
@@ -116,7 +121,7 @@ void app_main_setup()
         gpio_pad_select_gpio(pinesSalidaLED[i]);
         gpio_set_direction(pinesSalidaLED[i], GPIO_MODE_OUTPUT);
 
-        structLed data = {pinesSalidaLED[i], true};
+        structLed data = {pinesSalidaLED[i], false};
         arrLEDs[i] = data;
     }
 
@@ -153,29 +158,70 @@ void IRAM_ATTR isr_handler_boton(void *arg)
     xTaskResumeFromISR(data->task);
 }
 
-void rebote_boton(void *arg)
+void boton_presionado(void *arg)
 {
-    BaseType_t *xHigherPriorityTaskWoken = pdFALSE;
+    BaseType_t *xHigherPriorityTaskWoken = (BaseType_t *)pdFALSE;
     structLed *data = (structLed *)arg;
+    // uint8_t arrPatronPines[] = ;
 
     while (1)
     {
+        // UN DELAY PEQUEÑO PARA EVITAR CUALQUIER ERROR
+        vTaskDelay(INTERRUPT_DELAY / portTICK_PERIOD_MS);
+        // SE AUTOSUSPENDE LA TAREA PARA REANUDAR DESPUÉS EN ESTE MISMO PUNTO
+        vTaskSuspend(NULL);
+
         // SE APROPIA DEL SEMAFORO PARA AVISAR QUE UTILIZARA LA VARIABLE DE LED
         xSemaphoreTakeFromISR(HandlerSemaphoreBtn, xHigherPriorityTaskWoken);
+
+        // SI NO ESTAS EN JUEGO
+        if (!juegoActivo)
+        {
+            if (data->pinSalida == arrLEDs[0].pinSalida)
+            {
+                empezar_juego();
+
+                juegoActivo = !juegoActivo;
+            }
+        }
+        // SI SI ESTAS EN JUEGO
+        else
+        {
+            // VERIFICAR PATRON Y JALADA Y MEDIA
+        }
+
+        /*
+        // CAMBIA EL ESTADO DEL LED
+        data->pinEstado = !data->pinEstado;
+        // SE ACTUALIZA EL ESTADO DEL LED
+        gpio_set_level(data->pinSalida, data->pinEstado);
+
+        vTaskDelay(INTERRUPT_DELAY / portTICK_PERIOD_MS);
 
         // CAMBIA EL ESTADO DEL LED
         data->pinEstado = !data->pinEstado;
         // SE ACTUALIZA EL ESTADO DEL LED
         gpio_set_level(data->pinSalida, data->pinEstado);
+        */
         printf("Button %i pressed!\n", data->pinSalida);
 
         // SE CEDE EL USO DEL HANDLER DE TIPO SEMAFORO
         xSemaphoreGiveFromISR(HandlerSemaphoreBtn, xHigherPriorityTaskWoken);
+    }
+}
 
-        // UN DELAY PEQUEÑO PARA EVITAR CUALQUIER ERROR
-        vTaskDelay(INTERRUPT_DELAY / portTICK_PERIOD_MS);
-        // SE AUTOSUSPENDE LA TAREA
-        vTaskSuspend(NULL);
+void empezar_juego()
+{
+    // ENCENDER LEDS EN PATRON
+    for (int i = 0; i < sizeof(arrLEDs) / sizeof(structLed); i++)
+    {
+        arrLEDs[i].pinEstado = true;
+        gpio_set_level(arrLEDs[i].pinSalida, arrLEDs[i].pinEstado);
+        vTaskDelay(DELAY_GAME_INIT / portTICK_RATE_MS);
+
+        arrLEDs[i].pinEstado = false;
+        gpio_set_level(arrLEDs[i].pinSalida, arrLEDs[i].pinEstado);
+        vTaskDelay(DELAY_GAME_INIT / portTICK_RATE_MS);
     }
 }
 
