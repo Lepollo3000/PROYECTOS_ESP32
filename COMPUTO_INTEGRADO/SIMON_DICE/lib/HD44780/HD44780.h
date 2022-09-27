@@ -17,7 +17,7 @@ public:
     void setCursor(uint8_t col, uint8_t row);
     void home(void);
     void clear(void);
-    void writeChar(char c);
+    void writeChar(char c) const;
     void print(std::string str) const;
     void print(int i) const; 
     void print(char c) const;

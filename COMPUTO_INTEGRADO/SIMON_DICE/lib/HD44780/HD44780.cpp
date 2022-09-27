@@ -133,7 +133,7 @@ void LCD_I2C::setCursor(uint8_t col, uint8_t row)
     cur_col = col;
 }
 
-void LCD_I2C::writeChar(char c)
+void LCD_I2C::writeChar(char c) const
 {
     LCD_writeByte(c, LCD_WRITE);                                        // Write data to DDRAM
 }
