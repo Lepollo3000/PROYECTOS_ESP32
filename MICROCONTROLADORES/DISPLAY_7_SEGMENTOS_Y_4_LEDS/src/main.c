@@ -7,10 +7,10 @@
 #define BTN_1 GPIO_NUM_2
 #define BTN_2 GPIO_NUM_4
 
-#define LED_1 GPIO_NUM_16
-#define LED_2 GPIO_NUM_17
-#define LED_3 GPIO_NUM_5
-#define LED_4 GPIO_NUM_18
+#define LED_4 GPIO_NUM_16
+#define LED_3 GPIO_NUM_17
+#define LED_2 GPIO_NUM_5
+#define LED_1 GPIO_NUM_18
 
 #define SEGMENTO_A GPIO_NUM_13
 #define SEGMENTO_B GPIO_NUM_12
@@ -24,7 +24,8 @@
 #define DELAY_TIME 300
 
 void app_main_setup();
-void show_number(int8_t numero);
+void show_number_display(int8_t numero);
+void show_numberBinario(int8_t numero);
 bool button_pressed(gpio_num_t pin);
 
 void app_main()
@@ -32,39 +33,67 @@ void app_main()
     app_main_setup();
 
     int8_t x = 0;
-    int8_t y = 0b0000;
-
-    /*gpio_set_level(LED_1, true);
-    gpio_set_level(LED_2, true);
-    gpio_set_level(LED_3, true);
-    gpio_set_level(LED_4, true);*/
+    int8_t y = 0;
 
     while (1)
     {
         // 0 && 0
         if (!button_pressed(BTN_1) && !button_pressed(BTN_2))
+        {
+            // X = E
             x = 14;
+            y = 15;
+        }
         // 0 && 1
         else if (!button_pressed(BTN_1) && button_pressed(BTN_2))
-            x++;
+        {
+            if (x == 2 || x == 14 || y < 0)
+            {
+                y = 16;
+            }
+
+            x = 1;
+            y--;
+        }
         // 1 && 0
         else if (button_pressed(BTN_1) && !button_pressed(BTN_2))
-            x--;
+        {
+            if (x == 1 || x == 14 || y < 0)
+            {
+                y = -1;
+            }
+
+            x = 2;
+            y++;
+        }
         // 1 && 1
-        else if (!button_pressed(BTN_1) && !button_pressed(BTN_2))
-            x = x;
+        else if (button_pressed(BTN_1) && button_pressed(BTN_2))
+        {
+            if (y > 0)
+            {
+                x = 10;
+            }
 
-        y++;
+            x--;
+            y = 0;
+        }
 
-        // RESETEAR CONTEO
-        if (x > 15)
-            x = 0;
+        // RESETEAR CONTEO DISPLAY
         if (x < 0)
-            x = 15;
+            x = 9;
 
-        show_number(x);
-        printf("%d", x);
-        printf("%d", y);
+        // RESETEAR CONTEO LEDS
+        if (y > 15)
+            y = 0;
+        if (y < 0)
+            y = 15;
+
+        show_number_display(x);
+        show_numberBinario(y);
+
+        printf("x = %d\n", x);
+        printf("y = %d\n\n", y);
+
         vTaskDelay(DELAY_TIME / portTICK_PERIOD_MS);
     }
 }
@@ -108,7 +137,7 @@ void app_main_setup()
     gpio_pulldown_en(BTN_2);
 }
 
-void show_number(int8_t numero)
+void show_number_display(int8_t numero)
 {
     switch (numero)
     {
@@ -278,6 +307,117 @@ void show_number(int8_t numero)
         gpio_set_level(SEGMENTO_F, true);
         gpio_set_level(SEGMENTO_G, false);
         gpio_set_level(SEGMENTO_DP, false);
+        break;
+    }
+}
+
+void show_numberBinario(int8_t numero)
+{
+    switch (numero)
+    {
+    case 1:
+        gpio_set_level(LED_1, false);
+        gpio_set_level(LED_2, false);
+        gpio_set_level(LED_3, false);
+        gpio_set_level(LED_4, true);
+        break;
+
+    case 2:
+        gpio_set_level(LED_1, false);
+        gpio_set_level(LED_2, false);
+        gpio_set_level(LED_3, true);
+        gpio_set_level(LED_4, false);
+        break;
+
+    case 3:
+        gpio_set_level(LED_1, false);
+        gpio_set_level(LED_2, false);
+        gpio_set_level(LED_3, true);
+        gpio_set_level(LED_4, true);
+        break;
+
+    case 4:
+        gpio_set_level(LED_1, false);
+        gpio_set_level(LED_2, true);
+        gpio_set_level(LED_3, false);
+        gpio_set_level(LED_4, false);
+        break;
+
+    case 5:
+        gpio_set_level(LED_1, false);
+        gpio_set_level(LED_2, true);
+        gpio_set_level(LED_3, false);
+        gpio_set_level(LED_4, true);
+        break;
+
+    case 6:
+        gpio_set_level(LED_1, false);
+        gpio_set_level(LED_2, true);
+        gpio_set_level(LED_3, true);
+        gpio_set_level(LED_4, false);
+        break;
+
+    case 7:
+        gpio_set_level(LED_1, false);
+        gpio_set_level(LED_2, true);
+        gpio_set_level(LED_3, true);
+        gpio_set_level(LED_4, true);
+        break;
+    case 8:
+        gpio_set_level(LED_1, true);
+        gpio_set_level(LED_2, false);
+        gpio_set_level(LED_3, false);
+        gpio_set_level(LED_4, false);
+        break;
+
+    case 9:
+        gpio_set_level(LED_1, true);
+        gpio_set_level(LED_2, false);
+        gpio_set_level(LED_3, false);
+        gpio_set_level(LED_4, true);
+        break;
+    case 10:
+        gpio_set_level(LED_1, true);
+        gpio_set_level(LED_2, false);
+        gpio_set_level(LED_3, true);
+        gpio_set_level(LED_4, false);
+        break;
+    case 11:
+        gpio_set_level(LED_1, true);
+        gpio_set_level(LED_2, false);
+        gpio_set_level(LED_3, true);
+        gpio_set_level(LED_4, true);
+        break;
+    case 12:
+        gpio_set_level(LED_1, true);
+        gpio_set_level(LED_2, true);
+        gpio_set_level(LED_3, false);
+        gpio_set_level(LED_4, false);
+        break;
+    case 13:
+        gpio_set_level(LED_1, true);
+        gpio_set_level(LED_2, true);
+        gpio_set_level(LED_3, false);
+        gpio_set_level(LED_4, true);
+        break;
+    case 14:
+        gpio_set_level(LED_1, true);
+        gpio_set_level(LED_2, false);
+        gpio_set_level(LED_3, true);
+        gpio_set_level(LED_4, false);
+        break;
+    case 15:
+        gpio_set_level(LED_1, true);
+        gpio_set_level(LED_2, true);
+        gpio_set_level(LED_3, true);
+        gpio_set_level(LED_4, true);
+        break;
+    case 0:
+    default:
+        gpio_set_level(LED_1, false);
+        gpio_set_level(LED_2, false);
+        gpio_set_level(LED_3, false);
+        gpio_set_level(LED_4, false);
         break;
     }
 }
