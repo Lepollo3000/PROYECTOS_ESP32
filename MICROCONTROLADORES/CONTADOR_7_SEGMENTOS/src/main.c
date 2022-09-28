@@ -1,3 +1,11 @@
+/*
+ * Código por:
+ *  José Manuel Lepe Rodríguez
+ *  Isaac Alfonso Montalvo Morales
+ * 
+ * Fecha de realización: 2022-09-19
+*/
+
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -50,7 +58,7 @@ void app_main()
             x = 15;
 
         show_number(x);
-        printf("%d", x);
+        printf("%d\n", x);
         vTaskDelay(DELAY_TIME / portTICK_PERIOD_MS);
     }
 }
