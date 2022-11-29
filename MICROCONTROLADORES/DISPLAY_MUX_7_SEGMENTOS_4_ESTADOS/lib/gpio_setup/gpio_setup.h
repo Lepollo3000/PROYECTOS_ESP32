@@ -29,11 +29,4 @@
 #define DELAY_BUTTON 25
 #define DELAY_DISPLAY 10
 
-TaskHandle_t maquina_estado_1_task_handler = NULL;
-TaskHandle_t maquina_estado_2_task_handler = NULL;
-TaskHandle_t maquina_estado_3_task_handler = NULL;
-TaskHandle_t maquina_estado_4_task_handler = NULL;
-
-uint16_t contador = 0;
-
 void app_main_setup(void);
